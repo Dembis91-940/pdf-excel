@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF2Données — Extrayez les données de vos PDF en un clic, 100 % local</title>
+<meta name="description" content="Factures, relevés, tableaux : extrayez les données de vos PDF en CSV ou Excel, directement dans votre navigateur. Aucun fichier envoyé sur un serveur — 100 % local, RGPD friendly.">
+<meta property="og:title" content="PDF2Données — Le PDF arrive. Les données aussi.">
+<meta property="og:description" content="Extraction locale de vos PDF en tableau exploitable (CSV/Excel). Zéro retape manuelle, zéro upload.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234f46e5'/%3E%3Cpath d='M9 10h8a4 4 0 0 1 0 8h-2v4H9V10zm4 8h4a4 4 0 0 0 0-8h-4v8z' fill='%23a3e635'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff;
+    --ink:#0f172a;
+    --ink-soft:#334155;
+    --muted:#64748b;
+    --line:#e2e8f0;
+    --line-strong:#cbd5e1;
+    --indigo:#4f46e5;
+    --indigo-dark:#4338ca;
+    --indigo-deep:#312e81;
+    --indigo-50:#eef2ff;
+    --indigo-100:#e0e7ff;
+    --lime:#a3e635;
+    --lime-dark:#4d7c0f;
+    --lime-50:#f7fee7;
+    --lime-100:#ecfccb;
+    --sans:'Inter',system-ui,-apple-system,sans-serif;
+    --display:'Space Grotesk',var(--sans);
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --radius:14px;
+    --shadow-sm:0 1px 2px rgba(15,23,42,.06);
+    --shadow-md:0 10px 30px -12px rgba(79,70,229,.25);
+    --shadow-lg:0 24px 60px -20px rgba(49,46,129,.35);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--sans);color:var(--ink);background:var(--bg);line-height:1.6;font-size:16.5px;-webkit-font-smoothing:antialiased}
+  a{color:var(--indigo);text-decoration:none}
+  img,svg{display:block}
+  .container{max-width:1140px;margin:0 auto;padding:0 24px}
+  section{position:relative}
+
+  /* ---------- fond grille fine ---------- */
+  .grid-bg{
+    background-image:
+      linear-gradient(to right, rgba(79,70,229,.055) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(79,70,229,.055) 1px, transparent 1px);
+    background-size:44px 44px;
+  }
+
+  /* ---------- boutons ---------- */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--sans);font-weight:600;font-size:15.5px;border-radius:10px;padding:13px 22px;cursor:pointer;border:1.5px solid transparent;transition:all .18s ease;white-space:nowrap}
+  .btn-indigo{background:var(--indigo);color:#fff;box-shadow:0 8px 20px -8px rgba(79,70,229,.55)}
+  .btn-indigo:hover{background:var(--indigo-dark);transform:translateY(-1px)}
+  .btn-outline{background:#fff;color:var(--ink);border-color:var(--line-strong)}
+  .btn-outline:hover{border-color:var(--indigo);color:var(--indigo);background:var(--indigo-50)}
+  .btn-lime{background:var(--lime);color:#1a2e05;box-shadow:0 8px 20px -8px rgba(163,230,53,.6)}
+  .btn-lime:hover{background:#bef264;transform:translateY(-1px)}
+  .btn-block{width:100%}
+
+  /* ---------- en-tête ---------- */
+  .nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:68px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--display);font-weight:700;font-size:19px;color:var(--ink)}
+  .brand svg{width:34px;height:34px}
+  .brand em{font-style:normal;color:var(--indigo)}
+  .nav-links{display:flex;align-items:center;gap:28px;font-size:15px;font-weight:500}
+  .nav-links a{color:var(--ink-soft)}
+  .nav-links a:hover{color:var(--indigo)}
+  .nav-cta{display:flex;align-items:center;gap:14px}
+
+  /* ---------- hero ---------- */
+  .hero{padding:96px 0 84px;border-bottom:1px solid var(--line)}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:64px;align-items:center}
+  .hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--lime-100);border:1px solid #d9f99d;color:#365314;font-size:13.5px;font-weight:600;border-radius:999px;padding:7px 14px;margin-bottom:26px}
+  .hero-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--lime-dark);box-shadow:0 0 0 4px rgba(101,163,13,.18)}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(38px,5.2vw,60px);line-height:1.06;letter-spacing:-.02em}
+  h1 .mark{color:var(--indigo)}
+  h1 .mark-lime{position:relative;white-space:nowrap;color:var(--indigo)}
+  h1 .mark-lime::after{content:"";position:absolute;left:0;right:0;bottom:6px;height:10px;background:var(--lime);z-index:-1;border-radius:3px;opacity:.85}
+  .hero-sub{margin:24px 0 34px;font-size:19px;color:var(--ink-soft);max-width:540px}
+  .hero-ctas{display:flex;gap:14px;flex-wrap:wrap}
+  .hero-trust{display:flex;gap:22px;margin-top:34px;flex-wrap:wrap}
+  .hero-trust span{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;color:var(--muted);font-weight:500}
+  .hero-trust svg{width:15px;height:15px;color:var(--indigo)}
+
+  /* ---------- mockup outil ---------- */
+  .mockup{position:relative}
+  .mockup::before{content:"";position:absolute;inset:-26px;background:radial-gradient(closest-side, rgba(79,70,229,.13), transparent);z-index:0;border-radius:24px}
+  .tool-win{position:relative;z-index:1;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-lg);overflow:hidden}
+  .tool-titlebar{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);background:#fafbff}
+  .tool-dots{display:flex;gap:6px}
+  .tool-dots i{width:11px;height:11px;border-radius:50%}
+  .tool-dots i:nth-child(1){background:#fca5a5}
+  .tool-dots i:nth-child(2){background:#fcd34d}
+  .tool-dots i:nth-child(3){background:#86efac}
+  .tool-title{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .tool-title b{color:var(--indigo);font-weight:500}
+  .tool-body{padding:16px}
+  .tool-file{display:flex;align-items:center;gap:10px;border:1px dashed var(--line-strong);border-radius:10px;padding:10px 13px;background:#f8fafc}
+  .tool-file svg{width:18px;height:18px;color:var(--indigo)}
+  .tool-file .name{font-family:var(--mono);font-size:13px;color:var(--ink)}
+  .tool-file .meta{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:6px;padding:3px 8px}
+  .table-wrap{margin-top:14px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  table.demo{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+  table.demo th{background:var(--indigo-50);color:var(--indigo-deep);text-align:left;font-weight:500;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+  table.demo td{padding:8px 12px;border-bottom:1px solid #f1f5f9;color:var(--ink-soft)}
+  table.demo tr:last-child td{border-bottom:none}
+  table.demo td.num{text-align:right;color:var(--ink)}
+  table.demo tr.total td{background:var(--lime-50);font-weight:500;color:#1a2e05;border-top:1px solid #d9f99d}
+  .tool-actions{display:flex;gap:10px;margin-top:14px}
+  .tool-actions .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:12px;padding:9px 14px;border-radius:8px;font-weight:500}
+  .chip-indigo{background:var(--indigo);color:#fff}
+  .chip-line{border:1px solid var(--line-strong);color:var(--ink-soft);background:#fff}
+  .floating-badge{position:absolute;z-index:2;top:-18px;right:-12px;background:var(--lime);color:#1a2e05;font-weight:700;font-size:13px;padding:9px 16px;border-radius:999px;box-shadow:0 10px 24px -8px rgba(101,163,13,.55);display:flex;align-items:center;gap:7px;font-family:var(--sans)}
+  .floating-badge svg{width:14px;height:14px}
+  .mockup-caption{position:relative;z-index:1;text-align:center;margin-top:22px;font-size:13.5px;color:var(--muted)}
+  .mockup-caption b{color:var(--indigo)}
+
+  /* ---------- bande public ---------- */
+  .audience{border-bottom:1px solid var(--line);padding:26px 0;background:#fafbff}
+  .audience-inner{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;font-size:14.5px;color:var(--muted);font-weight:500}
+  .audience-inner b{color:var(--ink)}
+  .audience-inner .sep{width:5px;height:5px;border-radius:50%;background:var(--lime)}
+
+  /* ---------- sections génériques ---------- */
+  .sec{padding:96px 0}
+  .sec-head{max-width:680px;margin:0 auto 60px;text-align:center}
+  .kicker{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--indigo);background:var(--indigo-50);border:1px solid var(--indigo-100);padding:7px 13px;border-radius:999px;margin-bottom:20px}
+  .kicker::before{content:"";width:16px;height:2px;background:var(--lime)}
+  h2{font-family:var(--display);font-weight:700;font-size:clamp(30px,3.6vw,42px);line-height:1.12;letter-spacing:-.015em}
+  .sec-head p{margin-top:16px;font-size:17.5px;color:var(--muted)}
+
+  /* ---------- étapes ---------- */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;counter-reset:step}
+  .step{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:30px 26px;position:relative;transition:all .2s ease}
+  .step:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:var(--indigo-100)}
+  .step::before{counter-increment:step;content:"0" counter(step);font-family:var(--mono);font-size:13px;font-weight:500;color:var(--indigo);background:var(--lime);border-radius:7px;padding:4px 9px;position:absolute;top:22px;right:22px}
+  .step-icon{width:46px;height:46px;border-radius:11px;background:var(--indigo-50);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+  .step-icon svg{width:22px;height:22px;color:var(--indigo)}
+  .step h3{font-family:var(--display);font-size:19px;font-weight:600;margin-bottom:9px}
+  .step p{font-size:15px;color:var(--muted)}
+
+  /* ---------- arguments ---------- */
+  .args{background:var(--ink);color:#fff;position:relative;overflow:hidden}
+  .args .grid-bg{position:absolute;inset:0;background-image:linear-gradient(to right, rgba(163,230,53,.06) 1px, transparent 1px),linear-gradient(to bottom, rgba(163,230,53,.06) 1px, transparent 1px)}
+  .args .sec-head{position:relative}
+  .args .kicker{background:rgba(163,230,53,.12);border-color:rgba(163,230,53,.3);color:var(--lime)}
+  .args h2{position:relative}
+  .args .sec-head p{color:#94a3b8}
+  .arg-cards{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  .arg{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius);padding:32px 28px;transition:all .2s ease}
+  .arg:hover{border-color:rgba(163,230,53,.5);transform:translateY(-3px)}
+  .arg-icon{width:48px;height:48px;border-radius:12px;background:var(--lime);display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+  .arg-icon svg{width:23px;height:23px;color:#1a2e05}
+  .arg h3{font-family:var(--display);font-size:19.5px;font-weight:600;margin-bottom:11px}
+  .arg p{font-size:15px;color:#cbd5e1}
+  .arg p b{color:#fff}
+  .arg-tag{display:inline-block;font-family:var(--mono);font-size:11.5px;background:rgba(163,230,53,.14);color:var(--lime);border:1px solid rgba(163,230,53,.35);border-radius:6px;padding:3px 8px;margin-top:16px}
+
+  /* ---------- offres ---------- */
+  .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;align-items:stretch}
+  .plan{background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:34px 30px;display:flex;flex-direction:column;position:relative;transition:all .2s ease}
+  .plan:hover{transform:translateY(-4px);box-shadow:var(--shadow-md)}
+  .plan.pop{background:var(--indigo);border-color:var(--indigo);color:#fff;box-shadow:var(--shadow-lg)}
+  .plan-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--lime);color:#1a2e05;font-weight:700;font-size:12.5px;padding:6px 14px;border-radius:999px;letter-spacing:.02em;white-space:nowrap}
+  .plan-name{font-family:var(--display);font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .plan.pop .plan-name{color:#fff}
+  .plan-price{margin:18px 0 4px;display:flex;align-items:baseline;gap:6px}
+  .plan-price .amount{font-family:var(--display);font-size:44px;font-weight:700;letter-spacing:-.02em}
+  .plan-price .per{font-size:14.5px;color:var(--muted)}
+  .plan.pop .plan-price .per{color:#c7d2fe}
+  .plan-desc{font-size:14.5px;color:var(--muted);min-height:44px;margin-bottom:20px}
+  .plan.pop .plan-desc{color:#c7d2fe}
+  .plan ul{list-style:none;margin-bottom:28px;display:grid;gap:11px;flex:1}
+  .plan li{display:flex;gap:10px;font-size:14.5px;color:var(--ink-soft);align-items:flex-start}
+  .plan.pop li{color:#e0e7ff}
+  .plan li svg{width:17px;height:17px;color:var(--lime);flex-shrink:0;margin-top:2px}
+  .plan.pop li svg{color:var(--lime)}
+  .plan li.dim{opacity:.55}
+  .plan .btn{margin-top:auto}
+  .plan.pop .btn-outline{background:var(--lime);border-color:var(--lime);color:#1a2e05}
+  .plan.pop .btn-outline:hover{background:#bef264}
+  .plans-note{text-align:center;margin-top:26px;font-size:14px;color:var(--muted)}
+  .plans-note b{color:var(--indigo)}
+
+  /* ---------- formulaire ---------- */
+  .form-sec{background:var(--indigo-50);border-top:1px solid var(--indigo-100);border-bottom:1px solid var(--indigo-100)}
+  .form-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:56px;align-items:start}
+  .form-intro h2{margin-bottom:16px}
+  .form-intro p{color:var(--ink-soft);font-size:16.5px;margin-bottom:22px}
+  .form-points{display:grid;gap:13px;list-style:none}
+  .form-points li{display:flex;gap:11px;align-items:flex-start;font-size:15px;color:var(--ink-soft)}
+  .form-points svg{width:18px;height:18px;color:var(--indigo);flex-shrink:0;margin-top:3px}
+  .form-box{background:#fff;border:1px solid var(--line);border-radius:18px;padding:34px;box-shadow:var(--shadow-md)}
+  .form-box h3{font-family:var(--display);font-size:21px;font-weight:600;margin-bottom:6px}
+  .form-box .muted{font-size:14px;color:var(--muted);margin-bottom:22px}
+  .form-box label{display:block;font-size:13.5px;font-weight:600;color:var(--ink-soft);margin:16px 0 7px}
+  .form-box input,.form-box select,.form-box textarea{width:100%;font-family:var(--sans);font-size:15.5px;color:var(--ink);background:#f8fafc;border:1.5px solid var(--line-strong);border-radius:10px;padding:12px 14px;transition:border-color .15s ease, box-shadow .15s ease}
+  .form-box input:focus,.form-box select:focus,.form-box textarea:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px rgba(79,70,229,.15);background:#fff}
+  .form-box textarea{min-height:96px;resize:vertical}
+  .field-err{color:#dc2626;font-size:13px;margin-top:5px;display:none}
+  .field-err.show{display:block}
+  .form-box .btn{width:100%;margin-top:24px}
+  .secure-note{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:15px;font-size:13px;color:var(--muted)}
+  .secure-note svg{width:14px;height:14px;color:var(--indigo)}
+  .success-box{display:none;text-align:center;padding:20px 10px}
+  .success-box .check{width:64px;height:64px;border-radius:50%;background:var(--lime);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px;color:#1a2e05;font-weight:700}
+  .success-box h3{font-family:var(--display);font-size:24px;font-weight:700}
+  .success-box p{color:var(--muted);margin-top:10px;font-size:15px}
+  .next{margin-top:20px;font-weight:700;color:var(--ink);font-size:15.5px}
+  .access-list{list-style:none;margin-top:10px;display:grid;gap:8px;text-align:left;font-size:14.5px;color:var(--ink-soft)}
+  .access-list li{display:flex;gap:9px}
+  .access-list li::before{content:"→";color:var(--indigo);font-weight:700}
+
+  /* ---------- FAQ ---------- */
+  .faq{max-width:760px;margin:0 auto}
+  .faq-item{border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden;background:#fff}
+  .faq-q{width:100%;text-align:left;background:none;border:none;cursor:pointer;font-family:var(--sans);font-size:16.5px;font-weight:600;color:var(--ink);padding:19px 22px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+  .faq-q .chev{width:20px;height:20px;color:var(--indigo);flex-shrink:0;transition:transform .2s ease}
+  .faq-item.open .chev{transform:rotate(180deg)}
+  .faq-a{display:none;padding:0 22px 20px;font-size:15.5px;color:var(--ink-soft)}
+  .faq-item.open .faq-a{display:block;animation:fadeIn .25s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+
+  /* ---------- pied de page ---------- */
+  footer{background:var(--ink);color:#94a3b8;padding:56px 0 40px}
+  .foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:40px}
+  .foot-brand{display:flex;align-items:center;gap:11px;font-family:var(--display);font-weight:700;font-size:19px;color:#fff;margin-bottom:14px}
+  .foot-brand svg{width:30px;height:30px}
+  .foot-brand em{font-style:normal;color:var(--lime)}
+  .foot-about{font-size:14.5px;max-width:320px}
+  footer h4{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:#fff;margin-bottom:16px}
+  .foot-links{list-style:none;display:grid;gap:10px}
+  .foot-links a{color:#94a3b8;font-size:14.5px}
+  .foot-links a:hover{color:var(--lime)}
+  .foot-bottom{border-top:1px solid rgba(255,255,255,.1);padding-top:24px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13.5px}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:960px){
+    .hero{padding:64px 0 72px}
+    .hero-grid{grid-template-columns:1fr;gap:56px}
+    .mockup{max-width:560px;margin:0 auto}
+    .steps,.arg-cards,.plans{grid-template-columns:1fr}
+    .plan{max-width:480px;margin:0 auto;width:100%}
+    .plan.pop{margin-top:30px}
+    .form-grid{grid-template-columns:1fr}
+    .foot-grid{grid-template-columns:1fr}
+    .nav-links{display:none}
+  }
+  @media (max-width:560px){
+    .hero-ctas .btn{width:100%}
+    .tool-actions{flex-wrap:wrap}
+    .tool-actions .chip{flex:1;justify-content:center}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= EN-TÊTE ================= -->
+<nav class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="#top" aria-label="PDF2Données — accueil">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#4f46e5"/><path d="M9 10h8a4 4 0 0 1 0 8h-2v4H9V10zm4 8h4a4 4 0 0 0 0-8h-4v8z" fill="#a3e635"/></svg>
+      <span>PDF<em>2</em>Données</span>
+    </a>
+    <div class="nav-links">
+      <a href="#comment">Comment ça marche</a>
+      <a href="#arguments">Fonctionnalités</a>
+      <a href="#offres">Offres</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <div class="nav-cta">
+      <a href="outil.html" class="btn btn-indigo">Ouvrir l'outil →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="hero grid-bg" id="top">
+  <div class="container hero-grid">
+    <div>
+      <span class="hero-badge"><span class="dot"></span> 100&nbsp;% local — aucun fichier envoyé sur un serveur</span>
+      <h1>Le PDF arrive.<br>Les données <span class="mark-lime">aussi.</span></h1>
+      <p class="hero-sub">Factures, relevés, tableaux : extrayez les chiffres en un clic, directement dans votre navigateur. <strong>Zéro retape manuelle, zéro upload</strong> — vos documents restent sur votre machine.</p>
+      <div class="hero-ctas">
+        <a href="outil.html" class="btn btn-indigo">Tester l'outil gratuitement →</a>
+        <a href="#offres" class="btn btn-outline">Voir les offres</a>
+      </div>
+      <div class="hero-trust">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 3 pages offertes chaque mois</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Aucune inscription requise</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> RGPD friendly par conception</span>
+      </div>
+    </div>
+
+    <!-- Mockup : l'outil en action -->
+    <div class="mockup">
+      <div class="floating-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        0 upload · 100 % local
+      </div>
+      <div class="tool-win">
+        <div class="tool-titlebar">
+          <div class="tool-dots"><i></i><i></i><i></i></div>
+          <span class="tool-title">PDF2Données — extraction locale</span>
+        </div>
+        <div class="tool-body">
+          <div class="tool-file">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+            <span class="name">facture-2026-08.pdf</span>
+            <span class="meta">PDF · 1 page · 24 Ko</span>
+          </div>
+          <div class="table-wrap">
+            <table class="demo">
+              <thead><tr><th>Désignation</th><th>Qté</th><th>PU HT</th><th>Total HT</th></tr></thead>
+              <tbody>
+                <tr><td>Prestation conseil — août 2026</td><td class="num">12</td><td class="num">90,00 €</td><td class="num">1 080,00 €</td></tr>
+                <tr><td>Atelier d'équipe</td><td class="num">2</td><td class="num">250,00 €</td><td class="num">500,00 €</td></tr>
+                <tr><td>Licence logicielle</td><td class="num">1</td><td class="num">149,00 €</td><td class="num">149,00 €</td></tr>
+                <tr class="total"><td>Total HT</td><td></td><td></td><td class="num">1 729,00 €</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="tool-actions">
+            <span class="chip chip-indigo">⧉ Copier CSV</span>
+            <span class="chip chip-line">⇩ Télécharger CSV</span>
+          </div>
+        </div>
+      </div>
+      <p class="mockup-caption">Extraction en direct, dans le navigateur — <b>aucune donnée ne quitte votre machine</b>.</p>
+    </div>
+  </div>
+</header>
+
+<!-- ================= BANDE PUBLIC ================= -->
+<div class="audience">
+  <div class="container audience-inner">
+    <span>Pensé pour</span><b>les comptables</b><span class="sep"></span><b>les indépendants</b><span class="sep"></span><b>les artisans</b><span class="sep"></span><b>les équipes RH</b>
+    <span>— fini de retaper les PDF à la main.</span>
+  </div>
+</div>
+
+<!-- ================= COMMENT ÇA MARCHE ================= -->
+<section class="sec" id="comment">
+  <div class="container">
+    <div class="sec-head">
+      <span class="kicker">Comment ça marche</span>
+      <h2>De trois étapes fastidieuses<br>à trois clics.</h2>
+      <p>Vous recevez un PDF, vous en voulez les données. C'est tout — et c'est immédiat.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg></div>
+        <h3>Déposez votre PDF</h3>
+        <p>Glissez votre facture, votre relevé ou votre bordereau dans l'outil. Le fichier est lu localement, dans votre navigateur.</p>
+      </div>
+      <div class="step">
+        <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></div>
+        <h3>Les tableaux sont détectés</h3>
+        <p>Lignes, colonnes et chiffres sont analysés et structurés automatiquement, sans modèle à configurer ni paramètre à régler.</p>
+      </div>
+      <div class="step">
+        <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 8l5-5 5 5"/><path d="M12 3v12"/></svg></div>
+        <h3>Copiez ou exportez</h3>
+        <p>Un clic pour copier au format CSV, un clic pour télécharger. Votre tableau est prêt pour Excel, votre tableur ou votre logiciel de compta.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3 ARGUMENTS ================= -->
+<section class="sec args" id="arguments">
+  <div class="grid-bg" aria-hidden="true"></div>
+  <div class="container">
+    <div class="sec-head">
+      <span class="kicker">Pourquoi PDF2Données</span>
+      <h2>La fin de la retape manuelle,<br>sans sacrifier la confidentialité.</h2>
+      <p>Trois engagements simples, tenus par conception.</p>
+    </div>
+    <div class="arg-cards">
+      <div class="arg">
+        <div class="arg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <h3>100 % local — aucun upload</h3>
+        <p>Vos PDF ne quittent <b>jamais</b> votre machine. L'extraction s'exécute dans votre navigateur : aucune donnée transmise, aucun serveur, aucune trace. Vos documents sensibles — devis, salaires, relevés bancaires — restent sous votre contrôle, conformément à vos obligations RGPD.</p>
+        <span class="arg-tag">aucune donnée transmise</span>
+      </div>
+      <div class="arg">
+        <div class="arg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+        <h3>Extraction réelle, pas une démo</h3>
+        <p>L'outil lit <b>vraiment</b> le contenu de votre PDF. Il détecte les lignes et colonnes régulières, reconnaît les montants, les quantités et les libellés, puis restitue un tableau structuré et vérifiable avant export.</p>
+        <span class="arg-tag">lecture directe du PDF</span>
+      </div>
+      <div class="arg">
+        <div class="arg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg></div>
+        <h3>Export CSV &amp; Excel</h3>
+        <p>Copiez en un clic ou téléchargez un fichier <b>CSV compatible Excel</b> et tableurs (séparateur point-virgule, encodage UTF-8, accents préservés). L'offre Business ajoute l'<b>export Excel natif (.xlsx)</b>, un fichier par tableau.</p>
+        <span class="arg-tag">CSV · XLSX</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= OFFRES ================= -->
+<section class="sec" id="offres">
+  <div class="container">
+    <div class="sec-head">
+      <span class="kicker">Tarifs</span>
+      <h2>Un plan pour chaque volume de documents.</h2>
+      <p>Commencez gratuitement, évoluez quand votre volume de PDF augmente. Sans engagement.</p>
+    </div>
+    <div class="plans">
+      <!-- Gratuit -->
+      <div class="plan">
+        <div class="plan-name">Gratuit</div>
+        <div class="plan-price"><span class="amount">0&nbsp;€</span><span class="per">/ mois</span></div>
+        <p class="plan-desc">Pour découvrir l'extraction locale, sans carte bancaire.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 3 pages par mois</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Extraction basique (1 tableau)</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Aperçu dans le navigateur</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Copie CSV du premier tableau</li>
+          <li class="dim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 100 % local, quel que soit le plan</li>
+        </ul>
+        <a href="outil.html" class="btn btn-outline btn-block">Commencer gratuitement</a>
+      </div>
+      <!-- Pro -->
+      <div class="plan pop">
+        <div class="plan-badge">Le plus choisi</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price"><span class="amount">9&nbsp;€</span><span class="per">/ mois</span></div>
+        <p class="plan-desc">Pour les indépendants et artisans qui traitent des PDF chaque semaine.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 100 pages par mois</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Tous les tableaux détectés</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Export CSV complet (copie + téléchargement)</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Historique local des extractions</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Support par email</li>
+        </ul>
+        <a href="#commander" class="btn btn-lime btn-block">Passer Pro</a>
+      </div>
+      <!-- Business -->
+      <div class="plan">
+        <div class="plan-name">Business</div>
+        <div class="plan-price"><span class="amount">19&nbsp;€</span><span class="per">/ mois</span></div>
+        <p class="plan-desc">Pour les cabinets comptables et équipes qui traitent des volumes importants.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Pages illimitées</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Tableaux multiples par document</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Export Excel natif (.xlsx)</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Historique local illimité</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Support prioritaire</li>
+        </ul>
+        <a href="#commander" class="btn btn-indigo btn-block">Passer Business</a>
+      </div>
+    </div>
+    <p class="plans-note">🔒 Confirmation par email — paiement par virement ou message privé. <b>Sans engagement</b>, annulable à tout moment.</p>
+  </div>
+</section>
+
+<!-- ================= FORMULAIRE EMAILJS ================= -->
+<section class="sec form-sec" id="commander">
+  <div class="container form-grid">
+    <div class="form-intro">
+      <span class="kicker">Passer à l'action</span>
+      <h2>Une question ?<br>Une commande ?</h2>
+      <p>Choisissez votre offre et envoyez-nous votre demande : vous recevez une confirmation par email avec les coordonnées de paiement (virement ou message privé).</p>
+      <ul class="form-points">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Réponse sous 24 h ouvrées</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Activation immédiate après paiement</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Aucune donnée sensible à nous transmettre : tout reste local</li>
+      </ul>
+    </div>
+
+    <form class="form-box" id="checkout-form" novalidate>
+      <h3>Commander ou poser une question</h3>
+      <p class="muted">Remplissez vos coordonnées : la confirmation part par email, le paiement se fait par virement ou message privé.</p>
+
+      <label for="cf-nom">Votre nom</label>
+      <input type="text" id="cf-nom" placeholder="Ex. : Claire Fontaine" autocomplete="name">
+      <div class="field-err" id="err-nom"></div>
+
+      <label for="cf-email">Adresse email</label>
+      <input type="email" id="cf-email" placeholder="vous@exemple.fr" autocomplete="email">
+      <div class="field-err" id="err-email"></div>
+
+      <label for="cf-offre">Offre souhaitée</label>
+      <select id="cf-offre">
+        <option value="Gratuit — 0 €/mois (3 pages)" selected>Gratuit — 0 €/mois (3 pages)</option>
+        <option value="Pro — 9 €/mois (100 pages)">Pro — 9 €/mois (100 pages)</option>
+        <option value="Business — 19 €/mois (pages illimitées)">Business — 19 €/mois (pages illimitées)</option>
+      </select>
+
+      <label for="cf-question">Votre message <span style="font-weight:400;color:var(--muted)">(facultatif)</span></label>
+      <textarea id="cf-question" placeholder="Ex. : J'aimerais passer Pro, et savoir si l'export Excel est inclus…"></textarea>
+
+      <div class="field-err" id="order-err"></div>
+
+      <button type="submit" class="btn btn-indigo" id="pay-btn">Envoyer ma demande →</button>
+      <div class="secure-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Confirmation par email — paiement par virement ou message privé
+      </div>
+    </form>
+
+    <div class="success-box form-box" id="order-ok">
+      <div class="check">✓</div>
+      <h3>Demande envoyée !</h3>
+      <p>Merci <b id="ok-nom"></b> ! Votre demande <b id="ok-offre"></b> est bien enregistrée.</p>
+      <p>Vous recevez une <b>confirmation par email</b> à l'adresse indiquée, avec les coordonnées de paiement (virement ou message privé). Votre accès est activé dès réception du paiement.</p>
+      <p class="next">Que se passe-t-il maintenant ?</p>
+      <ul class="access-list">
+        <li>Vous recevez un email de confirmation sous quelques minutes.</li>
+        <li>Nous vous envoyons les coordonnées de paiement (virement ou message privé).</li>
+        <li>Dès réception du paiement, votre offre est activée.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="sec" id="faq">
+  <div class="container">
+    <div class="sec-head">
+      <span class="kicker">FAQ</span>
+      <h2>Questions fréquentes</h2>
+      <p>Tout ce qu'il faut savoir avant de commencer.</p>
+    </div>
+    <div class="faq">
+      <div class="faq-item">
+        <button class="faq-q" type="button">Mes PDF sont-ils envoyés sur un serveur ?
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="faq-a"><p><strong>Non, jamais.</strong> L'extraction se fait entièrement dans votre navigateur grâce à la bibliothèque pdf.js. Aucun fichier n'est transmis, ni stocké, ni consulté par nos soins : vos documents restent sur votre machine, du dépôt jusqu'à l'export.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" type="button">Quels types de PDF puis-je traiter ?
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="faq-a"><p>Les PDF textuels — factures, relevés, devis, bordereaux, plannings — contenant des tableaux simples aux colonnes régulières. C'est le cas de la grande majorité des documents générés par les logiciels de facturation et les banques. L'outil le précise honnêtement dès qu'un document sort de ce périmètre.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" type="button">Et les PDF scannés ou photographiés ?
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="faq-a"><p>Un PDF scanné est une image : il faut une reconnaissance optique de caractères (OCR) pour en extraire le texte. Cette capacité, prévue dans l'extraction avancée des offres Pro et Business, est déployée progressivement. Si votre document est scanné, l'outil vous l'indique clairement — pas de promesse illusoire.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" type="button">Comment fonctionne le quota de pages ?
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="faq-a"><p>L'offre Gratuite comprend 3 pages par mois, l'offre Pro 100 pages par mois, et l'offre Business un volume illimité. Chaque page traitée consomme une page du quota, et le compteur se réinitialise automatiquement au début de chaque mois.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" type="button">Puis-je exporter vers Excel ?
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="faq-a"><p>Oui. Le CSV téléchargé s'ouvre directement dans Excel et tous les tableurs, avec les accents préservés. L'offre Business ajoute l'export Excel natif (.xlsx), avec un fichier propre par tableau détecté.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" type="button">Puis-je annuler à tout moment ?
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="faq-a"><p>Oui, sans engagement : vous arrêtez quand vous voulez. Vos données locales (historique des extractions, compteur de pages) restent stockées sur votre machine et ne nous sont jamais transmises.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PIED DE PAGE ================= -->
+<footer>
+  <div class="container">
+    <div class="foot-grid">
+      <div>
+        <div class="foot-brand">
+          <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#4f46e5"/><path d="M9 10h8a4 4 0 0 1 0 8h-2v4H9V10zm4 8h4a4 4 0 0 0 0-8h-4v8z" fill="#a3e635"/></svg>
+          <span>PDF<em>2</em>Données</span>
+        </div>
+        <p class="foot-about">L'extraction de données PDF, 100 % locale et respectueuse de vos données. Fini de retaper les chiffres à la main.</p>
+      </div>
+      <div>
+        <h4>Produit</h4>
+        <ul class="foot-links">
+          <li><a href="outil.html">Ouvrir l'outil</a></li>
+          <li><a href="#comment">Comment ça marche</a></li>
+          <li><a href="#offres">Offres</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul class="foot-links">
+          <li><a href="#commander">Commander</a></li>
+          <li><a href="mailto:bonjour@pdf2donnees.fr">bonjour@pdf2donnees.fr</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 PDF2Données — Tous droits réservés.</span>
+      <span>Extraction 100 % locale · Aucun fichier envoyé · RGPD friendly</span>
+    </div>
+  </div>
+</footer>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "PDF2Données",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "description": "Extraction locale des données de PDF (factures, relevés, tableaux) en CSV ou Excel, sans envoyer le fichier sur un serveur.",
+  "offers": [
+    {"@type": "Offer", "name": "Gratuit", "price": "0", "priceCurrency": "EUR"},
+    {"@type": "Offer", "name": "Pro", "price": "9", "priceCurrency": "EUR"},
+    {"@type": "Offer", "name": "Business", "price": "19", "priceCurrency": "EUR"}
+  ],
+  "featureList": "Extraction 100 % locale, détection de tableaux, export CSV et Excel, historique local"
+}
+</script>
+
+<script>
+(function () {
+  /* ---------- FAQ accordéon ---------- */
+  document.querySelectorAll(".faq-q").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var item = btn.closest(".faq-item");
+      var open = item.classList.contains("open");
+      document.querySelectorAll(".faq-item.open").forEach(function (i) { i.classList.remove("open"); });
+      if (!open) item.classList.add("open");
+    });
+  });
+
+  /* ---------- Commande réelle via EmailJS ---------- */
+  var EMAILJS = {
+    serviceId: "service_cy1ytdb",
+    templateId: "template_xpo58cv",
+    publicKey: "8Pui4ZEqxW2jRVF7h"
+  };
+  var SITE = "PDF2Données";
+
+  // Chargement du SDK à la demande : le visiteur peut soumettre avant la fin
+  // du chargement — pas de course asynchrone.
+  function chargerEmailJS(callback) {
+    if (window.emailjs) { callback(); return; }
+    var s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
+    s.onload = function () { try { emailjs.init({ publicKey: EMAILJS.publicKey }); } catch (e) {} callback(); };
+    s.onerror = function () { callback(); };
+    document.head.appendChild(s);
+  }
+
+  function envoyerCommande(donnees, onOk, onErr) {
+    chargerEmailJS(function () {
+      if (!window.emailjs) {
+        onErr("Le service d'envoi est momentanément indisponible. Réessayez dans quelques instants, ou écrivez-nous à bonjour@pdf2donnees.fr.");
+        return;
+      }
+      emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
+        site: SITE,
+        name: donnees.nom,
+        email: donnees.email,
+        question: "Commande PDF2Données : " + donnees.offre + (donnees.question ? " — Message : " + donnees.question : "") + ". Confirmation et coordonnées de paiement à envoyer."
+      }).then(onOk, function () {
+        onErr("L'envoi a échoué. Vérifiez votre connexion puis réessayez, ou écrivez-nous à bonjour@pdf2donnees.fr.");
+      });
+    });
+  }
+
+  var form = document.getElementById("checkout-form");
+  if (form) {
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var nom = document.getElementById("cf-nom").value.trim();
+      var email = document.getElementById("cf-email").value.trim();
+      var offre = document.getElementById("cf-offre").value;
+      var question = document.getElementById("cf-question").value.trim();
+      var errNom = document.getElementById("err-nom");
+      var errEmail = document.getElementById("err-email");
+      var errGlobal = document.getElementById("order-err");
+      [errNom, errEmail, errGlobal].forEach(function (el) { el.textContent = ""; el.classList.remove("show"); });
+      if (nom.length < 2) { errNom.textContent = "Indiquez votre nom (2 caractères minimum)."; errNom.classList.add("show"); return; }
+      if (!email || email.indexOf("@") === -1 || email.indexOf(".") === -1) { errEmail.textContent = "Adresse email invalide."; errEmail.classList.add("show"); return; }
+
+      var btn = document.getElementById("pay-btn");
+      btn.disabled = true;
+      btn.textContent = "Envoi en cours…";
+      envoyerCommande({ nom: nom, email: email, offre: offre, question: question }, function () {
+        form.style.display = "none";
+        document.getElementById("ok-nom").textContent = nom;
+        document.getElementById("ok-offre").textContent = offre;
+        document.getElementById("order-ok").style.display = "block";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, function (msg) {
+        btn.disabled = false;
+        btn.textContent = "Envoyer ma demande →";
+        errGlobal.textContent = msg;
+        errGlobal.classList.add("show");
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>

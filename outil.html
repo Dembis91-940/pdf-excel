@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF2Données — Outil d'extraction 100 % local</title>
+<meta name="description" content="Extrayez les tableaux et les données de vos PDF (factures, relevés) en CSV, directement dans votre navigateur. Aucun fichier envoyé sur un serveur.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234f46e5'/%3E%3Cpath d='M9 10h8a4 4 0 0 1 0 8h-2v4H9V10zm4 8h4a4 4 0 0 0 0-8h-4v8z' fill='%23a3e635'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff; --ink:#0f172a; --ink-soft:#334155; --muted:#64748b;
+    --line:#e2e8f0; --line-strong:#cbd5e1;
+    --indigo:#4f46e5; --indigo-dark:#4338ca; --indigo-deep:#312e81;
+    --indigo-50:#eef2ff; --indigo-100:#e0e7ff;
+    --lime:#a3e635; --lime-dark:#4d7c0f; --lime-50:#f7fee7; --lime-100:#ecfccb;
+    --danger:#dc2626; --danger-bg:#fef2f2;
+    --sans:'Inter',system-ui,-apple-system,sans-serif;
+    --display:'Space Grotesk',var(--sans);
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --radius:14px;
+    --shadow-md:0 10px 30px -12px rgba(79,70,229,.25);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:var(--sans);color:var(--ink);background:#f8fafc;line-height:1.55;font-size:15.5px;-webkit-font-smoothing:antialiased}
+  a{color:var(--indigo);text-decoration:none}
+  .container{max-width:1180px;margin:0 auto;padding:0 24px}
+
+  /* grille fine de fond */
+  .grid-bg{background-image:linear-gradient(to right, rgba(79,70,229,.05) 1px, transparent 1px),linear-gradient(to bottom, rgba(79,70,229,.05) 1px, transparent 1px);background-size:40px 40px}
+
+  /* ---------- en-tête ---------- */
+  .nav{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px;gap:16px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:18px;color:var(--ink)}
+  .brand svg{width:30px;height:30px}
+  .brand em{font-style:normal;color:var(--indigo)}
+  .nav-right{display:flex;align-items:center;gap:14px}
+  .back-link{font-size:13.5px;font-weight:500;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
+  .back-link:hover{color:var(--indigo)}
+  .plan-box{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:6px 10px}
+  .plan-box label{font-size:12px;color:var(--muted);font-weight:500;white-space:nowrap}
+  .plan-box select{border:none;background:none;font-family:var(--sans);font-size:13.5px;font-weight:600;color:var(--indigo);cursor:pointer;outline:none;padding:2px 4px}
+  .quota-pill{font-family:var(--mono);font-size:12px;background:var(--indigo-50);border:1px solid var(--indigo-100);color:var(--indigo-deep);border-radius:999px;padding:7px 13px;font-weight:500;white-space:nowrap}
+
+  /* ---------- espace de travail ---------- */
+  .workspace{display:grid;grid-template-columns:380px 1fr;gap:24px;padding:36px 0 56px;align-items:start}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 1px 2px rgba(15,23,42,.04)}
+  .panel-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .panel-head h2{font-family:var(--display);font-size:15.5px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .panel-head h2 svg{width:17px;height:17px;color:var(--indigo)}
+  .panel-body{padding:20px}
+
+  /* ---------- zone de dépôt ---------- */
+  .dropzone{border:2px dashed var(--line-strong);border-radius:var(--radius);padding:42px 26px;text-align:center;cursor:pointer;transition:all .2s ease;background:linear-gradient(180deg,#fafbff,#fff)}
+  .dropzone:hover,.dropzone.drag{border-color:var(--indigo);background:var(--indigo-50);box-shadow:var(--shadow-md)}
+  .dropzone.drag{border-color:var(--lime);background:var(--lime-50)}
+  .dropzone svg.dz-icon{width:44px;height:44px;color:var(--indigo);margin:0 auto 14px}
+  .dropzone .dz-title{font-family:var(--display);font-weight:600;font-size:17px;margin-bottom:6px}
+  .dropzone .dz-sub{font-size:13.5px;color:var(--muted)}
+  .dropzone .dz-hint{margin-top:14px;display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11.5px;color:var(--indigo);background:var(--indigo-50);border:1px solid var(--indigo-100);border-radius:6px;padding:4px 9px}
+  .file-chip{display:none;align-items:center;gap:10px;margin-top:16px;border:1px solid var(--line);border-radius:10px;padding:10px 13px;background:#fff;text-align:left}
+  .file-chip.show{display:flex}
+  .file-chip svg{width:17px;height:17px;color:var(--indigo);flex-shrink:0}
+  .file-chip .fc-name{font-family:var(--mono);font-size:12.5px;color:var(--ink);word-break:break-all}
+  .file-chip .fc-meta{font-size:11.5px;color:var(--muted);font-family:var(--mono)}
+  .file-chip .fc-x{margin-left:auto;border:none;background:var(--danger-bg);color:var(--danger);width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:14px;line-height:1;flex-shrink:0}
+
+  /* ---------- quota ---------- */
+  .quota-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .quota-label{font-size:13px;font-weight:600;color:var(--ink-soft)}
+  .quota-val{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .quota-val b{color:var(--indigo);font-size:14px}
+  .bar{height:9px;background:var(--indigo-100);border-radius:999px;overflow:hidden}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--indigo),#6366f1);border-radius:999px;transition:width .4s ease}
+  .bar i.warn{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+  .bar i.full{background:linear-gradient(90deg,#ef4444,#f87171)}
+  .quota-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:11.5px;color:var(--muted)}
+  .quota-foot button{border:none;background:none;color:var(--indigo);font-size:11.5px;cursor:pointer;font-family:var(--sans);text-decoration:underline}
+  .quota-foot button:hover{color:var(--indigo-dark)}
+
+  /* ---------- historique ---------- */
+  .hist-list{display:grid;gap:10px}
+  .hist-item{border:1px solid var(--line);border-radius:9px;padding:10px 12px;display:flex;align-items:center;gap:10px}
+  .hist-item svg{width:15px;height:15px;color:var(--indigo);flex-shrink:0}
+  .hist-item .hi-main{min-width:0}
+  .hist-item .hi-name{font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hist-item .hi-meta{font-size:11px;color:var(--muted);font-family:var(--mono)}
+  .hist-empty{font-size:13px;color:var(--muted);text-align:center;padding:14px 0}
+  .hist-locked{font-size:13px;color:var(--muted);text-align:center;padding:14px 10px}
+  .hist-locked a{font-weight:600}
+
+  /* ---------- résultats ---------- */
+  .results-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+  .results-head h2{font-family:var(--display);font-size:21px;font-weight:700;display:flex;align-items:center;gap:10px}
+  .results-head h2 svg{width:21px;height:21px;color:var(--indigo)}
+  .results-meta{font-size:13px;color:var(--muted);font-family:var(--mono)}
+  .status-line{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--muted);padding:14px 18px;border:1px solid var(--line);border-radius:10px;background:#fff;margin-bottom:18px}
+  .status-line .spinner{width:15px;height:15px;border:2px solid var(--indigo-100);border-top-color:var(--indigo);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .status-line.ok{color:#166534;background:var(--lime-50);border-color:#d9f99d}
+  .status-line.err{color:#991b1b;background:var(--danger-bg);border-color:#fecaca}
+  .status-line.warn{color:#92400e;background:#fffbeb;border-color:#fde68a}
+  .status-line svg{width:16px;height:16px;flex-shrink:0}
+
+  /* tableau détecté */
+  .table-card{border:1px solid var(--line);border-radius:var(--radius);background:#fff;margin-bottom:20px;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+  .table-card-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);background:#fafbff;flex-wrap:wrap}
+  .tc-index{font-family:var(--mono);font-size:12px;font-weight:500;color:#fff;background:var(--indigo);border-radius:7px;padding:4px 9px}
+  .tc-name{font-family:var(--display);font-weight:600;font-size:15px}
+  .tc-dims{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 9px}
+  .tc-locked-head{display:flex;align-items:center;gap:12px;padding:14px 18px;background:#fffbeb;border-bottom:1px solid #fde68a;flex-wrap:wrap}
+  .tc-locked-head .tc-name{color:#92400e}
+  .tc-locked-head svg{width:17px;height:17px;color:#d97706;flex-shrink:0}
+  .table-scroll{overflow:auto;max-height:420px}
+  table.preview{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12.5px;min-width:520px}
+  table.preview thead th{position:sticky;top:0;background:var(--indigo-50);color:var(--indigo-deep);font-weight:500;text-align:left;padding:9px 14px;border-bottom:1px solid var(--line);white-space:nowrap;z-index:1}
+  table.preview tbody td{padding:8px 14px;border-bottom:1px solid #f1f5f9;color:var(--ink-soft);white-space:nowrap;max-width:340px;overflow:hidden;text-overflow:ellipsis}
+  table.preview tbody tr:hover td{background:#fafbff}
+  table.preview tbody tr:last-child td{border-bottom:none}
+  td.cell-num{text-align:right;color:var(--ink);font-weight:500}
+  .tc-actions{display:flex;gap:10px;padding:14px 18px;border-top:1px solid var(--line);flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--sans);font-weight:600;font-size:13.5px;border-radius:9px;padding:11px 18px;cursor:pointer;border:1.5px solid transparent;transition:all .18s ease;white-space:nowrap}
+  .btn-indigo{background:var(--indigo);color:#fff}
+  .btn-indigo:hover{background:var(--indigo-dark)}
+  .btn-outline{background:#fff;color:var(--ink-soft);border-color:var(--line-strong)}
+  .btn-outline:hover{border-color:var(--indigo);color:var(--indigo)}
+  .btn-lime{background:var(--lime);color:#1a2e05}
+  .btn-lime:hover{background:#bef264}
+  .btn-locked{background:#f1f5f9;color:var(--muted);border-color:var(--line);cursor:not-allowed}
+  .btn-locked .lock{width:13px;height:13px}
+  .btn:disabled{opacity:.65;cursor:not-allowed}
+  .tc-locked-body{padding:26px 18px;text-align:center}
+  .tc-locked-body p{font-size:14px;color:var(--muted);max-width:460px;margin:0 auto 14px}
+  .tc-locked-body a{font-weight:600}
+
+  /* ---------- bannière upgrade ---------- */
+  .upgrade-banner{display:none;border:1px solid #d9f99d;background:var(--lime-50);border-radius:var(--radius);padding:20px 22px;margin-bottom:20px;align-items:flex-start;gap:16px}
+  .upgrade-banner.show{display:flex}
+  .upgrade-banner .ub-icon{width:40px;height:40px;border-radius:10px;background:var(--lime);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .upgrade-banner .ub-icon svg{width:20px;height:20px;color:#1a2e05}
+  .upgrade-banner h3{font-family:var(--display);font-size:17px;font-weight:700;margin-bottom:4px}
+  .upgrade-banner p{font-size:14px;color:var(--ink-soft)}
+  .upgrade-banner .ub-ctas{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+
+  /* ---------- note locale ---------- */
+  .local-note{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--muted);border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 13px;margin-top:16px}
+  .local-note svg{width:14px;height:14px;color:var(--lime-dark);flex-shrink:0}
+
+  /* ---------- pied ---------- */
+  .tool-footer{border-top:1px solid var(--line);background:#fff;padding:26px 0 40px}
+  .tool-footer .container{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+  .tool-footer a{font-weight:500}
+
+  /* ---------- toast ---------- */
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13.5px;font-weight:500;border-radius:10px;padding:12px 20px;opacity:0;pointer-events:none;transition:all .25s ease;z-index:90;display:flex;align-items:center;gap:9px;box-shadow:0 16px 40px -12px rgba(15,23,42,.4);max-width:92vw}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast svg{width:16px;height:16px;color:var(--lime);flex-shrink:0}
+
+  /* ---------- modale ---------- */
+  .modal-veil{position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);z-index:80;display:none;align-items:center;justify-content:center;padding:20px}
+  .modal-veil.show{display:flex}
+  .modal{background:#fff;border-radius:18px;max-width:470px;width:100%;padding:30px;box-shadow:0 30px 80px -20px rgba(15,23,42,.5);animation:pop .25s ease}
+  @keyframes pop{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:none}}
+  .modal .m-icon{width:52px;height:52px;border-radius:14px;background:var(--lime);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+  .modal .m-icon svg{width:26px;height:26px;color:#1a2e05}
+  .modal h3{font-family:var(--display);font-size:21px;font-weight:700;margin-bottom:8px}
+  .modal p{font-size:14.5px;color:var(--ink-soft);margin-bottom:18px}
+  .modal .m-plans{display:grid;gap:8px;margin-bottom:20px}
+  .modal .m-plan{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);border-radius:9px;padding:10px 14px;font-size:14px}
+  .modal .m-plan b{font-family:var(--display)}
+  .modal .m-plan .pr{font-family:var(--mono);font-size:13px;color:var(--indigo);font-weight:500}
+  .modal .m-ctas{display:flex;gap:10px;flex-wrap:wrap}
+  .modal .m-close{margin-left:auto;border:none;background:var(--indigo-50);color:var(--indigo);border-radius:8px;padding:10px 16px;font-weight:600;cursor:pointer;font-family:var(--sans);font-size:13.5px}
+  .modal .m-close:hover{background:var(--indigo-100)}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:920px){
+    .workspace{grid-template-columns:1fr}
+    .nav-inner{flex-wrap:wrap;padding:10px 0}
+    .plan-box{display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= EN-TÊTE ================= -->
+<nav class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="index.html">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#4f46e5"/><path d="M9 10h8a4 4 0 0 1 0 8h-2v4H9V10zm4 8h4a4 4 0 0 0 0-8h-4v8z" fill="#a3e635"/></svg>
+      <span>PDF<em>2</em>Données</span>
+    </a>
+    <div class="nav-right">
+      <a class="back-link" href="index.html">← Retour à l'accueil</a>
+      <div class="plan-box">
+        <label for="plan-select">Mon plan</label>
+        <select id="plan-select">
+          <option value="free">Gratuit — 3 pages/mois</option>
+          <option value="pro">Pro — 9 €/mois</option>
+          <option value="business">Business — 19 €/mois</option>
+        </select>
+      </div>
+      <span class="quota-pill" id="quota-pill">—</span>
+    </div>
+  </div>
+</nav>
+
+<main class="container grid-bg">
+  <div class="workspace">
+
+    <!-- ============ COLONNE GAUCHE ============ -->
+    <div style="display:grid;gap:20px">
+
+      <!-- Zone de dépôt -->
+      <section class="panel" aria-label="Déposer votre PDF">
+        <div class="panel-head">
+          <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> Votre document</h2>
+        </div>
+        <div class="panel-body">
+          <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Déposer votre PDF ou cliquer pour sélectionner un fichier">
+            <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5M8 9h2"/></svg>
+            <div class="dz-title">Glissez votre PDF ici</div>
+            <div class="dz-sub">ou cliquez pour parcourir vos fichiers</div>
+            <div class="dz-hint">accepte .pdf · traitement local</div>
+            <input type="file" id="file-input" accept="application/pdf,.pdf" hidden>
+          </div>
+          <div class="file-chip" id="file-chip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+            <div style="min-width:0">
+              <div class="fc-name" id="fc-name"></div>
+              <div class="fc-meta" id="fc-meta"></div>
+            </div>
+            <button class="fc-x" id="fc-x" type="button" aria-label="Retirer le fichier">✕</button>
+          </div>
+          <div class="local-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span><b style="color:var(--ink-soft)">100 % local</b> : votre fichier est lu par votre navigateur et ne quitte jamais votre machine. Aucun serveur, aucune trace.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quota -->
+      <section class="panel" aria-label="Quota de pages">
+        <div class="panel-head">
+          <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Pages du mois</h2>
+        </div>
+        <div class="panel-body">
+          <div class="quota-row">
+            <span class="quota-label">Utilisé ce mois-ci</span>
+            <span class="quota-val"><b id="quota-used">0</b> / <span id="quota-limit">3</span> pages</span>
+          </div>
+          <div class="bar"><i id="quota-bar" style="width:0%"></i></div>
+          <div class="quota-foot">
+            <span id="quota-reset">Réinitialisation automatique le 1er du mois</span>
+            <button type="button" id="quota-reset-btn" title="Réinitialiser le compteur (démo)">Réinitialiser</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Historique -->
+      <section class="panel" aria-label="Historique des extractions">
+        <div class="panel-head">
+          <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg> Historique local</h2>
+        </div>
+        <div class="panel-body">
+          <div id="hist-box"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ COLONNE RÉSULTATS ============ -->
+    <section class="panel" aria-label="Résultats de l'extraction">
+      <div class="panel-head results-head">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg> Résultats de l'extraction</h2>
+        <span class="results-meta" id="results-meta"></span>
+      </div>
+      <div class="panel-body" style="padding-top:18px">
+
+        <!-- Bannière quota atteint -->
+        <div class="upgrade-banner" id="upgrade-banner">
+          <div class="ub-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+          <div>
+            <h3 id="upgrade-title">Quota mensuel atteint</h3>
+            <p id="upgrade-text"></p>
+            <div class="ub-ctas">
+              <a href="index.html#offres" class="btn btn-indigo">Voir les offres</a>
+              <a href="index.html#commander" class="btn btn-outline">Commander</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ligne de statut -->
+        <div class="status-line" id="status-line" style="display:none"></div>
+
+        <!-- Résultats -->
+        <div id="results"></div>
+        <div id="empty-state" style="text-align:center;padding:56px 20px">
+          <svg style="width:52px;height:52px;color:var(--line-strong);margin:0 auto 16px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+          <p style="font-family:var(--display);font-weight:600;font-size:16px;color:var(--ink-soft)">Aucune extraction pour le moment</p>
+          <p style="font-size:13.5px;color:var(--muted);margin-top:6px;max-width:380px;margin-left:auto;margin-right:auto">Déposez un PDF dans le panneau de gauche : les tableaux détectés apparaîtront ici, prêts à être copiés ou exportés en CSV.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- ================= PIED ================= -->
+<footer class="tool-footer">
+  <div class="container">
+    <span><b style="color:var(--ink-soft)">Limites assumées :</b> l'extraction par motifs gère les tableaux simples aux colonnes régulières (factures, relevés, bordereaux). Les PDF scannés ou photographiés nécessitent une reconnaissance OCR, prévue sur les offres Pro et Business — l'outil vous le signale si votre document est concerné.</span>
+    <span><a href="index.html">Accueil</a> · <a href="index.html#offres">Offres</a> · <a href="index.html#faq">FAQ</a> · <a href="mailto:bonjour@pdf2donnees.fr">Contact</a></span>
+  </div>
+</footer>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Modale upgrade -->
+<div class="modal-veil" id="modal-veil">
+  <div class="modal">
+    <div class="m-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+    <h3 id="modal-title">Fonctionnalité réservée</h3>
+    <p id="modal-text">Cette fonctionnalité nécessite une offre supérieure.</p>
+    <div class="m-plans">
+      <div class="m-plan"><span><b>Pro</b> — 100 pages/mois, CSV complet, historique</span><span class="pr">9 €/mois</span></div>
+      <div class="m-plan"><span><b>Business</b> — pages illimitées, tableaux multiples, Excel</span><span class="pr">19 €/mois</span></div>
+    </div>
+    <div class="m-ctas">
+      <a href="index.html#commander" class="btn btn-indigo">Commander</a>
+      <button type="button" class="m-close" id="modal-close">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= BIBLIOTHÈQUE PDF.JS (CDN) ================= -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+</script>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ============================================================
+     CONFIGURATION DES PLANS
+     ============================================================ */
+  var PLANS = {
+    free:     { label: "Gratuit",   pages: 3,        tables: 1,  excel: false, history: false },
+    pro:      { label: "Pro",       pages: 100,      tables: Infinity, excel: false, history: true },
+    business: { label: "Business",  pages: Infinity, tables: Infinity, excel: true,  history: true }
+  };
+
+  var LS_PLAN = "p2d_plan";
+  var LS_QUOTA = "p2d_quota";
+  var LS_HISTORY = "p2d_history";
+
+  /* ============================================================
+     ÉTAT LOCAL (localStorage)
+     ============================================================ */
+  function getPlan() {
+    var p = localStorage.getItem(LS_PLAN);
+    return PLANS[p] ? p : "free";
+  }
+  function setPlan(p) { localStorage.setItem(LS_PLAN, p); }
+
+  function monthKey() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+  }
+  function getQuota() {
+    var q;
+    try { q = JSON.parse(localStorage.getItem(LS_QUOTA)); } catch (e) { q = null; }
+    if (!q || q.month !== monthKey()) q = { month: monthKey(), used: 0 };
+    return q;
+  }
+  function saveQuota(q) { localStorage.setItem(LS_QUOTA, JSON.stringify(q)); }
+
+  function getHistory() {
+    try { var h = JSON.parse(localStorage.getItem(LS_HISTORY)); return Array.isArray(h) ? h : []; }
+    catch (e) { return []; }
+  }
+  function pushHistory(entry) {
+    var h = getHistory();
+    h.unshift(entry);
+    if (h.length > 12) h = h.slice(0, 12);
+    localStorage.setItem(LS_HISTORY, JSON.stringify(h));
+  }
+
+  /* ============================================================
+     ÉLÉMENTS DOM
+     ============================================================ */
+  var $ = function (id) { return document.getElementById(id); };
+  var dropzone = $("dropzone"), fileInput = $("file-input");
+  var fileChip = $("file-chip"), fcName = $("fc-name"), fcMeta = $("fc-meta");
+  var quotaUsed = $("quota-used"), quotaLimit = $("quota-limit"), quotaBar = $("quota-bar"), quotaPill = $("quota-pill");
+  var statusLine = $("status-line"), results = $("results"), emptyState = $("empty-state");
+  var upgradeBanner = $("upgrade-banner"), upgradeTitle = $("upgrade-title"), upgradeText = $("upgrade-text");
+  var resultsMeta = $("results-meta");
+  var toastEl = $("toast");
+  var modalVeil = $("modal-veil"), modalTitle = $("modal-title"), modalText = $("modal-text");
+
+  var currentFile = null;
+  var extraction = null; // { file, pages, tables: [{page, name, rows}], scannedPages: [] }
+
+  /* ============================================================
+     UTILITAIRES
+     ============================================================ */
+  function fmtBytes(b) {
+    if (b < 1024) return b + " o";
+    if (b < 1048576) return (b / 1024).toFixed(1).replace(".", ",") + " Ko";
+    return (b / 1048576).toFixed(1).replace(".", ",") + " Mo";
+  }
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function toast(msg) {
+    toastEl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' + esc(msg);
+    toastEl.classList.add("show");
+    clearTimeout(toastEl._t);
+    toastEl._t = setTimeout(function () { toastEl.classList.remove("show"); }, 2600);
+  }
+  function showModal(title, text) {
+    modalTitle.textContent = title;
+    modalText.textContent = text;
+    modalVeil.classList.add("show");
+  }
+  function setStatus(type, html) {
+    if (!html) { statusLine.style.display = "none"; statusLine.className = "status-line"; return; }
+    var icons = {
+      spin: '<span class="spinner"></span>',
+      ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+      err: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>',
+      warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>'
+    };
+    statusLine.className = "status-line " + type;
+    statusLine.innerHTML = icons[type] + html;
+    statusLine.style.display = "flex";
+  }
+
+  /* ============================================================
+     QUOTA — affichage + contrôle
+     ============================================================ */
+  function quotaRemaining() {
+    var plan = PLANS[getPlan()];
+    if (plan.pages === Infinity) return Infinity;
+    var used = getQuota().used;
+    return Math.max(0, plan.pages - used);
+  }
+
+  function refreshQuotaUI() {
+    var plan = PLANS[getPlan()];
+    var used = getQuota().used;
+    var pct, cls = "";
+    if (plan.pages === Infinity) {
+      quotaUsed.textContent = used;
+      quotaLimit.textContent = "∞";
+      quotaBar.style.width = "100%";
+      quotaBar.className = "";
+      pct = 100;
+    } else {
+      pct = Math.min(100, Math.round(used / plan.pages * 100));
+      quotaUsed.textContent = used;
+      quotaLimit.textContent = plan.pages;
+      quotaBar.style.width = pct + "%";
+      quotaBar.className = pct >= 100 ? "full" : (pct >= 80 ? "warn" : "");
+    }
+    quotaPill.textContent = plan.pages === Infinity
+      ? "∞ pages · " + plan.label
+      : (plan.pages - used) + " page" + ((plan.pages - used) > 1 ? "s" : "") + " restante" + ((plan.pages - used) > 1 ? "s" : "") + " · " + plan.label;
+  }
+
+  function consumeQuota(pages) {
+    var q = getQuota();
+    q.used += pages;
+    saveQuota(q);
+    refreshQuotaUI();
+  }
+
+  function renderUpgradeBanner() {
+    var plan = PLANS[getPlan()];
+    var remaining = quotaRemaining();
+    var show = false, title = "", text = "";
+    if (remaining === 0 && plan.pages !== Infinity) {
+      show = true;
+      title = "Quota mensuel atteint";
+      text = "Vous avez utilisé vos " + plan.pages + " pages de l'offre " + plan.label + " pour ce mois. Passez à Pro (100 pages/mois, 9 €) ou Business (pages illimitées, 19 €) pour continuer à extraire sans attendre.";
+    }
+    upgradeBanner.classList.toggle("show", show);
+    upgradeTitle.textContent = title;
+    upgradeText.textContent = text;
+  }
+
+  /* ============================================================
+     EXTRACTION PDF — lignes de texte
+     ============================================================ */
+  function buildLines(items) {
+    var lines = [];
+    var TOL_Y = 3;
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      var text = (it.str || "").replace(/\u00a0/g, " ").trim();
+      if (!text) continue;
+      var x = it.transform[4], y = it.transform[5];
+      var w = it.width || Math.max(6, text.length * 4.5);
+      var line = null;
+      for (var j = 0; j < lines.length; j++) {
+        if (Math.abs(lines[j].y - y) <= TOL_Y) { line = lines[j]; break; }
+      }
+      if (!line) { line = { y: y, tokens: [] }; lines.push(line); }
+      line.tokens.push({ text: text, x: x, w: w });
+    }
+    // tri : y décroissant (le PDF part du haut), puis x croissant
+    lines.sort(function (a, b) { return b.y - a.y; });
+    for (var k = 0; k < lines.length; k++) {
+      var toks = lines[k].tokens.sort(function (a, b) { return a.x - b.x; });
+      // fusion des fragments très proches (mots découpés)
+      var merged = [];
+      for (var m = 0; m < toks.length; m++) {
+        if (merged.length) {
+          var last = merged[merged.length - 1];
+          if (toks[m].x - (last.x + last.w) < 0.5) {
+            last.text += toks[m].text;
+            last.w = toks[m].x + toks[m].w - last.x;
+            continue;
+          }
+        }
+        merged.push({ text: toks[m].text, x: toks[m].x, w: toks[m].w });
+      }
+      lines[k].tokens = merged;
+    }
+    return lines;
+  }
+
+  /* ============================================================
+     DÉTECTION DE TABLEAUX PAR MOTIFS (lignes/colonnes régulières)
+     ============================================================ */
+  function detectTables(lines) {
+    var i, t, li, r;
+
+    // 1) Étendue horizontale du document
+    var minX = Infinity, maxX = -Infinity;
+    for (i = 0; i < lines.length; i++) {
+      for (t = 0; t < lines[i].tokens.length; t++) {
+        var tk = lines[i].tokens[t];
+        if (tk.x < minX) minX = tk.x;
+        if (tk.x + tk.w > maxX) maxX = tk.x + tk.w;
+      }
+    }
+    if (!isFinite(minX)) return [];
+
+    // 2) Preuves de frontières de colonnes :
+    //    a) milieux des espaces entre tokens adjacents (régularité horizontale) ;
+    //    b) appariement « fin d'une colonne » + « début de la colonne suivante »
+    //       (clusters de fins alignées de chiffres + clusters de débuts alignés de textes).
+    function clusterize(vals, tol) {
+      var out = [];
+      for (var v = 0; v < vals.length; v++) {
+        var found = null;
+        for (var c = 0; c < out.length; c++) {
+          if (Math.abs(out[c].x - vals[v].x) <= tol) { found = out[c]; break; }
+        }
+        if (found) {
+          found.x = (found.x * found.count + vals[v].x) / (found.count + 1);
+          found.count++;
+          found.lines.push(vals[v].li);
+        } else {
+          out.push({ x: vals[v].x, count: 1, lines: [vals[v].li] });
+        }
+      }
+      return out;
+    }
+
+    var mids = [], starts = [], ends = [];
+    for (li = 0; li < lines.length; li++) {
+      var toks = lines[li].tokens;
+      if (toks.length < 2) continue;
+      for (t = 0; t < toks.length; t++) {
+        starts.push({ x: toks[t].x, li: li });
+        ends.push({ x: toks[t].x + toks[t].w, li: li });
+        if (t < toks.length - 1) {
+          mids.push({ x: (toks[t].x + toks[t].w + toks[t + 1].x) / 2, li: li });
+        }
+      }
+    }
+
+    // Une preuve n'est crédible que retrouvée sur ≥ 2 lignes différentes
+    var midClusters = clusterize(mids, 14).filter(function (c) { return c.lines.length >= 2; });
+    var startClusters = clusterize(starts, 8).filter(function (c) { return c.lines.length >= 2; }).map(function (c) { return c.x; }).sort(function (a, b) { return a - b; });
+    var endClusters = clusterize(ends, 8).filter(function (c) { return c.lines.length >= 2; }).map(function (c) { return c.x; }).sort(function (a, b) { return a - b; });
+
+    var pairBounds = [];
+    var si = 0, ei = 0;
+    while (si < startClusters.length && ei < endClusters.length) {
+      if (endClusters[ei] < startClusters[si]) {
+        var gap = startClusters[si] - endClusters[ei];
+        if (gap > 4 && gap < 400) {
+          pairBounds.push({ x: (endClusters[ei] + startClusters[si]) / 2, count: 2 });
+        }
+        ei++;
+      } else {
+        si++;
+      }
+    }
+
+    // 3) Fusion des frontières proches (≤ 35 pt) puis tri
+    var candidates = midClusters.map(function (c) { return { x: c.x, count: c.lines.length }; })
+                                .concat(pairBounds)
+                                .sort(function (a, b) { return a.x - b.x; });
+    var bounds = [];
+    for (i = 0; i < candidates.length; i++) {
+      var last = bounds[bounds.length - 1];
+      if (last && candidates[i].x - last.x <= 35) {
+        last.x = (last.x * last.count + candidates[i].x * candidates[i].count) / (last.count + candidates[i].count);
+        last.count += candidates[i].count;
+      } else {
+        bounds.push({ x: candidates[i].x, count: candidates[i].count });
+      }
+    }
+    var boundXs = bounds.map(function (b) { return b.x; });
+    if (boundXs.length < 1) return [];
+
+    var nCols = boundXs.length + 1;
+    var leftEdge = minX - 8;
+    var rightEdge = maxX + 8;
+    var colCenters = [];
+    colCenters.push((leftEdge + boundXs[0]) / 2);
+    for (i = 1; i < boundXs.length; i++) colCenters.push((boundXs[i - 1] + boundXs[i]) / 2);
+    colCenters.push((boundXs[boundXs.length - 1] + rightEdge) / 2);
+
+    function regionOf(x) {
+      for (var b = 0; b < boundXs.length; b++) if (x <= boundXs[b]) return b;
+      return boundXs.length;
+    }
+
+    // 4) Chaque ligne devient une rangée : token placé dans la région qui
+    //    contient son début, avec repli sur le centre de colonne le plus
+    //    proche quand le token déborde de sa région (en-têtes à cheval).
+    function rowForLine(L) {
+      var cells = new Array(nCols).fill("");
+      var colSet = [];
+      var hasNumeric = false;
+      for (var i2 = 0; i2 < L.tokens.length; i2++) {
+        var tok = L.tokens[i2];
+        var start = tok.x, end = tok.x + tok.w;
+        var reg = regionOf(start);
+        if (reg < boundXs.length && end > boundXs[reg] + 4) {
+          var c = (start + end) / 2;
+          var best = 0, bd = Infinity;
+          for (var j2 = 0; j2 < colCenters.length; j2++) {
+            var d = Math.abs(c - colCenters[j2]);
+            if (d < bd) { bd = d; best = j2; }
+          }
+          reg = best;
+        }
+        cells[reg] = (cells[reg] ? cells[reg] + " " : "") + tok.text;
+        if (colSet.indexOf(reg) === -1) colSet.push(reg);
+        if (/\d/.test(tok.text)) hasNumeric = true;
+      }
+      var nonEmpty = 0;
+      for (var n = 0; n < cells.length; n++) if (cells[n] !== "") nonEmpty++;
+      return { cells: cells, colSet: colSet, qualify: nonEmpty >= 2, y: L.y, hasNumeric: hasNumeric };
+    }
+
+    var rows = lines.map(rowForLine);
+
+    // 5) Regroupement en blocs : rangées consécutives qui partagent la même
+    //    structure de colonnes (signature) et un espacement vertical régulier.
+    //    Cette double contrainte écarte les lignes d'en-tête isolées
+    //    (numéro de facture, adresse client…) qui n'ont pas la régularité
+    //    d'un tableau.
+    var tables = [], cur = null;
+
+    function blockSig(block) {
+      // colonnes présentes dans ≥ 60 % des rangées du bloc
+      var counts = new Array(nCols).fill(0);
+      for (var r2 = 0; r2 < block.rows.length; r2++) {
+        for (var k2 = 0; k2 < block.rows[r2].colSet.length; k2++) counts[block.rows[r2].colSet[k2]]++;
+      }
+      var threshold = block.rows.length * 0.6;
+      var sig = [];
+      for (var s2 = 0; s2 < counts.length; s2++) if (counts[s2] >= threshold) sig.push(s2);
+      return sig;
+    }
+    function intersect(a, b) {
+      var n = 0;
+      for (var i3 = 0; i3 < a.length; i3++) if (b.indexOf(a[i3]) !== -1) n++;
+      return n;
+    }
+    function medianGap(block) {
+      var gaps = [];
+      for (var r3 = 1; r3 < block.rows.length; r3++) gaps.push(block.rows[r3 - 1].y - block.rows[r3].y);
+      if (!gaps.length) return 0;
+      gaps.sort(function (a, b) { return a - b; });
+      return gaps[Math.floor(gaps.length / 2)];
+    }
+
+    for (r = 0; r < rows.length; r++) {
+      var row = rows[r];
+      if (row.qualify) {
+        var canJoin = false;
+        if (cur) {
+          var gapOk = (row.y <= cur.rows[cur.rows.length - 1].y) &&
+            ((cur.rows.length >= 3 && (cur.rows[cur.rows.length - 1].y - row.y) <= medianGap(cur) * 2.2) ||
+             (cur.rows.length < 3 && (cur.rows[cur.rows.length - 1].y - row.y) <= 26));
+          canJoin = gapOk && intersect(row.colSet, blockSig(cur)) >= 2;
+        }
+        if (!cur || !canJoin) { cur = { rows: [] }; tables.push(cur); }
+        cur.rows.push(row);
+      } else {
+        cur = null;
+      }
+    }
+    // 6) Nettoyage : un tableau crédible comporte au moins 3 rangées, dont au
+    //    moins 2 contenant un chiffre ou au moins 3 cellules remplies.
+    var out = [];
+    for (var tb = 0; tb < tables.length; tb++) {
+      var block = tables[tb];
+      if (block.rows.length < 3) continue;
+      var strong = 0;
+      for (var sr = 0; sr < block.rows.length; sr++) {
+        var rr = block.rows[sr];
+        if (rr.hasNumeric || rr.colSet.length >= 3) strong++;
+      }
+      if (strong >= 2) {
+        var rowsArr = block.rows.map(function (rr) { return rr.cells; });
+        // Suppression des colonnes entièrement vides : une vraie colonne porte
+        // au moins un token (son en-tête ou une valeur) ; une colonne vide est
+        // une frontière parasite qu'on peut retirer sans perte d'information.
+        var drop = [];
+        for (var dc = 0; dc < rowsArr[0].length; dc++) {
+          var has = false;
+          for (var dr = 0; dr < rowsArr.length; dr++) {
+            if (rowsArr[dr][dc] !== "") { has = true; break; }
+          }
+          if (!has) drop.push(dc);
+        }
+        if (drop.length) {
+          rowsArr = rowsArr.map(function (row) {
+            return row.filter(function (_, idx) { return drop.indexOf(idx) === -1; });
+          });
+        }
+        out.push({ rows: rowsArr });
+      }
+    }
+    return out;
+  }
+
+  /* ============================================================
+     CSV — sérialisation, copie, téléchargement (réels)
+     ============================================================ */
+  function toCSV(rows) {
+    var lines = [];
+    for (var i = 0; i < rows.length; i++) {
+      var cells = rows[i].map(function (cell) {
+        var s = String(cell === undefined || cell === null ? "" : cell);
+        if (/[";\r\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+        return s;
+      });
+      lines.push(cells.join(";"));
+    }
+    return lines.join("\r\n");
+  }
+
+  function fileNameBase() {
+    if (!currentFile) return "extraction";
+    return currentFile.name.replace(/\.pdf$/i, "");
+  }
+
+  function copyCSV(table) {
+    var csv = toCSV(table.rows);
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = csv;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); toast("CSV copié dans le presse-papiers."); }
+      catch (e) { toast("Copie impossible — utilisez « Télécharger CSV »."); }
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(csv).then(function () {
+        toast("CSV copié dans le presse-papiers.");
+      }, fallback);
+    } else { fallback(); }
+  }
+
+  function downloadCSV(table) {
+    var csv = toCSV(table.rows);
+    // BOM UTF-8 : accents corrects dans Excel
+    var blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = fileNameBase() + "_" + table.slug + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    toast("Fichier CSV téléchargé.");
+  }
+
+  /* ============================================================
+     EXPORT EXCEL (.xlsx) — Business uniquement
+     ============================================================ */
+  function exportExcel(table, planKey) {
+    if (!PLANS[planKey].excel) {
+      showModal("Export Excel réservé à l'offre Business",
+        "L'export Excel natif (.xlsx) fait partie de l'offre Business (pages illimitées, tableaux multiples, 19 €/mois). Passez à Business pour générer un fichier .xlsx par tableau.");
+      return;
+    }
+    function doExport() {
+      var rows = table.rows.map(function (r) { return r.slice(); });
+      var wb = XLSX.utils.book_new();
+      var ws = XLSX.utils.aoa_to_sheet(rows);
+      XLSX.utils.book_append_sheet(wb, ws, table.name.replace(/[\\/?*\[\]:]/g, " ").slice(0, 28) || "Tableau");
+      XLSX.writeFile(wb, fileNameBase() + "_" + table.slug + ".xlsx");
+      toast("Fichier Excel (.xlsx) téléchargé.");
+    }
+    if (window.XLSX) { doExport(); return; }
+    var s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+    s.onload = doExport;
+    s.onerror = function () { toast("Impossible de charger le moteur Excel — vérifiez votre connexion."); };
+    document.head.appendChild(s);
+  }
+
+  /* ============================================================
+     RENDU DES RÉSULTATS
+     ============================================================ */
+  function isNumericCell(v) { return /^[\s\d\s]*[\d][\d\s.,€%]*$/.test(String(v).trim()); }
+
+  function renderResults() {
+    emptyState.style.display = "none";
+    results.innerHTML = "";
+    if (!extraction) return;
+
+    var planKey = getPlan();
+    var plan = PLANS[planKey];
+    var html = "";
+
+    for (var i = 0; i < extraction.tables.length; i++) {
+      var tb = extraction.tables[i];
+      var locked = i >= plan.tables;
+      var dims = tb.rows[0].length + " colonne" + (tb.rows[0].length > 1 ? "s" : "") + " × " + tb.rows.length + " ligne" + (tb.rows.length > 1 ? "s" : "");
+
+      if (locked) {
+        html += '<div class="table-card"><div class="tc-locked-head">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
+          '<span class="tc-name">' + esc(tb.name) + '</span>' +
+          '<span class="tc-dims">' + dims + '</span></div>' +
+          '<div class="tc-locked-body"><p><b>Tableaux supplémentaires détectés.</b> L\'extraction multi-tableaux est incluse dans les offres Pro (9 €/mois) et Business (19 €/mois).</p>' +
+          '<a href="index.html#offres" class="btn btn-indigo">Voir les offres</a></div></div>';
+        continue;
+      }
+
+      var rowsHtml = "";
+      for (var r = 0; r < tb.rows.length; r++) {
+        var cellsHtml = "";
+        for (var c = 0; c < tb.rows[r].length; c++) {
+          var val = tb.rows[r][c];
+          var cls = isNumericCell(val) ? ' class="cell-num"' : "";
+          cellsHtml += "<td" + cls + ' title="' + esc(val) + '">' + esc(val) + "</td>";
+        }
+        rowsHtml += "<tr>" + cellsHtml + "</tr>";
+      }
+
+      html += '<div class="table-card">' +
+        '<div class="table-card-head">' +
+          '<span class="tc-index">' + (i + 1) + '</span>' +
+          '<span class="tc-name">' + esc(tb.name) + '</span>' +
+          '<span class="tc-dims">' + dims + '</span>' +
+        '</div>' +
+        '<div class="table-scroll"><table class="preview"><thead><tr>' +
+          tb.rows[0].map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") +
+        '</tr></thead><tbody>' + rowsHtml + '</tbody></table></div>' +
+        '<div class="tc-actions">' +
+          '<button type="button" class="btn btn-indigo" data-act="copy" data-idx="' + i + '">⧉ Copier CSV</button>' +
+          '<button type="button" class="btn btn-outline" data-act="download" data-idx="' + i + '">⇩ Télécharger CSV</button>' +
+          (plan.excel
+            ? '<button type="button" class="btn btn-lime" data-act="excel" data-idx="' + i + '">Export Excel (.xlsx)</button>'
+            : '<button type="button" class="btn btn-locked" data-act="excel" data-idx="' + i + '"><svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Export Excel</button>') +
+        '</div></div>';
+    }
+    results.innerHTML = html;
+
+    // actions
+    results.querySelectorAll("button[data-act]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var idx = parseInt(btn.getAttribute("data-idx"), 10);
+        var table = extraction.tables[idx];
+        if (!table) return;
+        var act = btn.getAttribute("data-act");
+        if (act === "copy") copyCSV(table);
+        else if (act === "download") downloadCSV(table);
+        else if (act === "excel") exportExcel(table, getPlan());
+      });
+    });
+
+    renderUpgradeBanner();
+    renderHistory();
+  }
+
+  /* ============================================================
+     HISTORIQUE LOCAL (offres Pro et Business)
+     ============================================================ */
+  function renderHistory() {
+    var box = $("hist-box");
+    var plan = PLANS[getPlan()];
+    if (!plan.history) {
+      box.innerHTML = '<div class="hist-locked">L\'historique local des extractions est inclus dans l\'offre <a href="index.html#offres">Pro (9 €/mois)</a> et <a href="index.html#offres">Business</a>.</div>';
+      return;
+    }
+    var h = getHistory();
+    if (!h.length) {
+      box.innerHTML = '<div class="hist-empty">Aucune extraction enregistrée pour le moment.</div>';
+      return;
+    }
+    box.innerHTML = '<div class="hist-list">' + h.map(function (e) {
+      var d = new Date(e.date);
+      var dateStr = d.toLocaleDateString("fr-FR") + " " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+      return '<div class="hist-item">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>' +
+        '<div class="hi-main"><div class="hi-name">' + esc(e.name) + '</div>' +
+        '<div class="hi-meta">' + dateStr + ' · ' + e.pages + ' page' + (e.pages > 1 ? "s" : "") + ' · ' + e.tables + ' tableau' + (e.tables > 1 ? "x" : "") + '</div></div></div>';
+    }).join("") + '</div>';
+  }
+
+  /* ============================================================
+     PIPELINE D'EXTRACTION
+     ============================================================ */
+  function handleFile(file) {
+    if (!file) return;
+    if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") {
+      setStatus("err", "Ce fichier n'est pas un PDF. Déposez un document au format PDF.");
+      return;
+    }
+    currentFile = file;
+    fcName.textContent = file.name;
+    fcMeta.textContent = "PDF · " + fmtBytes(file.size);
+    fileChip.classList.add("show");
+
+    var remaining = quotaRemaining();
+    if (remaining === 0) {
+      renderUpgradeBanner();
+      setStatus("warn", "Votre quota de pages pour ce mois est épuisé. Passez à une offre supérieure pour continuer.");
+      return;
+    }
+    if (typeof pdfjsLib === "undefined") {
+      setStatus("err", "Le moteur d'extraction n'a pas pu être chargé (connexion Internet requise au premier chargement). Rechargez la page puis réessayez.");
+      return;
+    }
+
+    emptyState.style.display = "none";
+    results.innerHTML = "";
+    setStatus("spin", "Lecture du PDF en cours…");
+
+    file.arrayBuffer().then(function (buffer) {
+      return pdfjsLib.getDocument({ data: buffer }).promise;
+    }).then(function (pdf) {
+      var totalPages = pdf.numPages;
+      var pagesToProcess = Math.min(totalPages, remaining);
+      var truncated = pagesToProcess < totalPages;
+      setStatus("spin", "PDF lu : " + totalPages + " page" + (totalPages > 1 ? "s" : "") + " — extraction des tableaux en cours… (page " + pagesToProcess + "/" + pagesToProcess + ")");
+
+      var allTables = [];
+      var scannedPages = [];
+      var seq = 0;
+
+      function processPage(pageNum) {
+        return pdf.getPage(pageNum).then(function (page) {
+          return page.getTextContent().then(function (content) {
+            var lines = buildLines(content.items);
+            if (!lines.length) { scannedPages.push(pageNum); return; }
+            var tables = detectTables(lines);
+            for (var i = 0; i < tables.length; i++) {
+              seq++;
+              allTables.push({
+                page: pageNum,
+                name: "Tableau " + seq + " — page " + pageNum,
+                slug: "tableau" + seq,
+                rows: tables[i].rows
+              });
+            }
+          });
+        });
+      }
+
+      var chain = Promise.resolve();
+      for (var p = 1; p <= pagesToProcess; p++) {
+        (function (pg) {
+          chain = chain.then(function () { return processPage(pg); });
+        })(p);
+      }
+      return chain.then(function () {
+        pdf.destroy();
+        consumeQuota(pagesToProcess);
+        return { totalPages: totalPages, pagesToProcess: pagesToProcess, truncated: truncated, allTables: allTables, scannedPages: scannedPages };
+      });
+    }).then(function (res) {
+      extraction = { file: currentFile, pages: res.pagesToProcess, tables: res.allTables, scannedPages: res.scannedPages };
+      var notes = [];
+
+      if (!res.allTables.length && res.scannedPages.length === res.pagesToProcess) {
+        setStatus("warn", "Ce PDF semble être composé d'images (document scanné ou photographié) : l'extraction de texte n'est pas possible sans reconnaissance OCR. L'OCR est en cours de déploiement sur les offres Pro et Business — votre fichier n'a pas été transmis et reste sur votre machine.");
+        emptyState.style.display = "block";
+        emptyState.querySelector("p").textContent = "Document scanné détecté : aucun texte extractible sans OCR.";
+        results.innerHTML = "";
+        renderUpgradeBanner();
+        return;
+      }
+
+      if (!res.allTables.length) {
+        setStatus("warn", "Aucun tableau aux colonnes régulières n'a été détecté dans ce PDF. L'extraction par motifs gère les tableaux simples (factures, relevés, bordereaux). Vous pouvez réessayer avec un autre document.");
+        emptyState.style.display = "block";
+        emptyState.querySelector("p").textContent = "Aucun tableau détecté dans ce document.";
+        results.innerHTML = "";
+        renderUpgradeBanner();
+        return;
+      }
+
+      var tableWord = res.allTables.length > 1 ? "tableaux" : "tableau";
+      var msg = "Extraction terminée : <b>" + res.allTables.length + "</b> " + tableWord + " détecté" + (res.allTables.length > 1 ? "s" : "") + " sur " + res.pagesToProcess + " page" + (res.pagesToProcess > 1 ? "s" : "") + ".";
+      if (res.scannedPages.length) msg += " Page" + (res.scannedPages.length > 1 ? "s" : "") + " " + res.scannedPages.join(", ") + " sans texte extractible (image).";
+      if (res.truncated) {
+        msg += res.pagesToProcess > 1
+          ? " Seules les " + res.pagesToProcess + " premières pages ont été traitées (quota mensuel)."
+          : " Seule la première page a été traitée (quota mensuel).";
+      }
+      setStatus("ok", msg);
+
+      resultsMeta.textContent = res.allTables.length + " tableau" + (res.allTables.length > 1 ? "x" : "") + " · " + res.totalPages + " page" + (res.totalPages > 1 ? "s" : "") + " au total";
+      renderResults();
+
+      // historique (Pro/Business)
+      if (PLANS[getPlan()].history) {
+        pushHistory({
+          date: new Date().toISOString(),
+          name: currentFile.name,
+          pages: res.pagesToProcess,
+          tables: res.allTables.length
+        });
+        renderHistory();
+      }
+      document.querySelector(".workspace").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }).catch(function (err) {
+      console.error("Extraction échouée :", err);
+      var msg = "Impossible de lire ce PDF. Il est peut-être corrompu, protégé par mot de passe, ou dans un format non pris en charge.";
+      if (err && err.name === "PasswordException") msg = "Ce PDF est protégé par mot de passe : la lecture n'est pas possible pour le moment.";
+      setStatus("err", msg);
+      emptyState.style.display = "block";
+      results.innerHTML = "";
+    });
+  }
+
+  /* ============================================================
+     ÉVÉNEMENTS
+     ============================================================ */
+  dropzone.addEventListener("click", function () { fileInput.click(); });
+  dropzone.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
+  });
+  ["dragenter", "dragover"].forEach(function (ev) {
+    dropzone.addEventListener(ev, function (e) { e.preventDefault(); dropzone.classList.add("drag"); });
+  });
+  ["dragleave", "drop"].forEach(function (ev) {
+    dropzone.addEventListener(ev, function (e) { e.preventDefault(); dropzone.classList.remove("drag"); });
+  });
+  dropzone.addEventListener("drop", function (e) {
+    var f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+  fileInput.addEventListener("change", function () {
+    if (fileInput.files && fileInput.files[0]) handleFile(fileInput.files[0]);
+  });
+  $("fc-x").addEventListener("click", function () {
+    currentFile = null;
+    fileChip.classList.remove("show");
+    fileInput.value = "";
+    setStatus(null);
+    results.innerHTML = "";
+    emptyState.style.display = "block";
+    resultsMeta.textContent = "";
+    renderUpgradeBanner();
+  });
+
+  $("plan-select").addEventListener("change", function () {
+    setPlan(this.value);
+    refreshQuotaUI();
+    renderUpgradeBanner();
+    renderHistory();
+    if (extraction) renderResults(); // re-rendu : déverrouille/verrouille tableaux et Excel
+  });
+  $("quota-reset-btn").addEventListener("click", function () {
+    saveQuota({ month: monthKey(), used: 0 });
+    refreshQuotaUI();
+    renderUpgradeBanner();
+    toast("Compteur de pages réinitialisé.");
+  });
+  modalVeil.addEventListener("click", function (e) {
+    if (e.target === modalVeil) modalVeil.classList.remove("show");
+  });
+  $("modal-close").addEventListener("click", function () { modalVeil.classList.remove("show"); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") modalVeil.classList.remove("show");
+  });
+
+  /* ============================================================
+     INITIALISATION
+     ============================================================ */
+  $("plan-select").value = getPlan();
+  refreshQuotaUI();
+  renderUpgradeBanner();
+  renderHistory();
+})();
+</script>
+</body>
+</html>
