@@ -29,6 +29,7 @@
     --lime-dark:#4d7c0f;
     --lime-50:#f7fee7;
     --lime-100:#ecfccb;
+    --grad-cta:linear-gradient(135deg,#4f46e5 0%,#3730a3 100%);
     --sans:'Inter',system-ui,-apple-system,sans-serif;
     --display:'Space Grotesk',var(--sans);
     --mono:'IBM Plex Mono',ui-monospace,monospace;
@@ -55,8 +56,8 @@
 
   /* ---------- boutons ---------- */
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--sans);font-weight:600;font-size:15.5px;border-radius:10px;padding:13px 22px;cursor:pointer;border:1.5px solid transparent;transition:all .18s ease;white-space:nowrap}
-  .btn-indigo{background:var(--indigo);color:#fff;box-shadow:0 8px 20px -8px rgba(79,70,229,.55)}
-  .btn-indigo:hover{background:var(--indigo-dark);transform:translateY(-1px)}
+  .btn-indigo{background:var(--grad-cta);color:#fff;box-shadow:0 8px 22px -8px rgba(79,70,229,.6)}
+  .btn-indigo:hover{filter:brightness(1.12);transform:translateY(-1px)}
   .btn-outline{background:#fff;color:var(--ink);border-color:var(--line-strong)}
   .btn-outline:hover{border-color:var(--indigo);color:var(--indigo);background:var(--indigo-50)}
   .btn-lime{background:var(--lime);color:#1a2e05;box-shadow:0 8px 20px -8px rgba(163,230,53,.6)}
@@ -287,7 +288,7 @@
     <div>
       <span class="hero-badge"><span class="dot"></span> 100&nbsp;% local — aucun fichier envoyé sur un serveur</span>
       <h1>Le PDF arrive.<br>Les données <span class="mark-lime">aussi.</span></h1>
-      <p class="hero-sub">Factures, relevés, tableaux : extrayez les chiffres en un clic, directement dans votre navigateur. <strong>Zéro retape manuelle, zéro upload</strong> — vos documents restent sur votre machine.</p>
+      <p class="hero-sub">Factures, relevés, tableaux : les chiffres sortent en un clic, directement dans votre navigateur. <strong>Zéro retape manuelle, zéro upload</strong> — vos documents ne quittent jamais votre machine.</p>
       <div class="hero-ctas">
         <a href="outil.html" class="btn btn-indigo">Tester l'outil gratuitement →</a>
         <a href="#offres" class="btn btn-outline">Voir les offres</a>
@@ -387,19 +388,19 @@
       <div class="arg">
         <div class="arg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
         <h3>100 % local — aucun upload</h3>
-        <p>Vos PDF ne quittent <b>jamais</b> votre machine. L'extraction s'exécute dans votre navigateur : aucune donnée transmise, aucun serveur, aucune trace. Vos documents sensibles — devis, salaires, relevés bancaires — restent sous votre contrôle, conformément à vos obligations RGPD.</p>
+        <p>Vos PDF ne quittent <b>jamais</b> votre machine. L'extraction s'exécute dans votre navigateur : aucune donnée transmise, aucun serveur, aucune trace. Devis, salaires, relevés bancaires : ils restent sous votre contrôle — <b>RGPD respecté par conception</b>, pas par promesse.</p>
         <span class="arg-tag">aucune donnée transmise</span>
       </div>
       <div class="arg">
         <div class="arg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
         <h3>Extraction réelle, pas une démo</h3>
-        <p>L'outil lit <b>vraiment</b> le contenu de votre PDF. Il détecte les lignes et colonnes régulières, reconnaît les montants, les quantités et les libellés, puis restitue un tableau structuré et vérifiable avant export.</p>
+        <p>L'outil lit <b>vraiment</b> votre PDF. Il détecte les lignes et colonnes régulières, reconnaît les montants, les quantités et les libellés, puis restitue un tableau structuré — <b>vérifiable avant export</b>, vous gardez la main sur chaque chiffre.</p>
         <span class="arg-tag">lecture directe du PDF</span>
       </div>
       <div class="arg">
         <div class="arg-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg></div>
         <h3>Export CSV &amp; Excel</h3>
-        <p>Copiez en un clic ou téléchargez un fichier <b>CSV compatible Excel</b> et tableurs (séparateur point-virgule, encodage UTF-8, accents préservés). L'offre Business ajoute l'<b>export Excel natif (.xlsx)</b>, un fichier par tableau.</p>
+        <p>Copiez en un clic ou téléchargez un fichier <b>CSV compatible Excel</b> et tableurs — séparateur point-virgule, UTF-8, accents préservés, prêt à l'emploi. L'offre Business ajoute l'<b>export Excel natif (.xlsx)</b>, un fichier par tableau.</p>
         <span class="arg-tag">CSV · XLSX</span>
       </div>
     </div>
