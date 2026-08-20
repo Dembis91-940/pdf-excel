@@ -385,7 +385,8 @@ a{transition:color .3s ease}
 .step{background:rgba(255,255,255,.05) !important;border:1px solid rgba(140,165,230,.14) !important}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
-</style></head>
+</style><meta name="twitter:card" content="summary_large_image">
+</head>
 <body>
 
 <!-- ================= EN-TÊTE ================= -->
@@ -852,7 +853,7 @@ a{transition:color .3s ease}
   var els=document.querySelectorAll(sel);
   if(!('IntersectionObserver' in window)){for(var i=0;i<els.length;i++)els[i].classList.add('f3-in');return;}
   for(var i=0;i<els.length;i++)els[i].classList.add('f3-reveal');
-  var io=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){en.target.classList.add('f3-in');io.unobserve(en.target);}});},{threshold:.1});
+  var io=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting||en.target.getBoundingClientRect().top<innerHeight){en.target.classList.add('f3-in');io.unobserve(en.target);}});},{threshold:.1});
   for(var i=0;i<els.length;i++)io.observe(els[i]);
 })();
 </script></body>
